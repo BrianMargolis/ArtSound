@@ -11,26 +11,30 @@ class Image:
 
         self._edges = None
 
+    def edge_detection(self, threshold: Tuple = (150, 250)):
+        edge_img = cv.Canny(self.img, threshold[0], threshold[1])
+        edge_name = '{0}_edges'.format(self.name)
+        self._edges = ImageFromMatrix(edge_img, edge_name)
+
     @property
-    def edges(self, threshold: Tuple = (150, 250)):
+    def edges(self):
         if self._edges is None:
-            edge_img = cv.Canny(self.img, threshold[0], threshold[1])
-            edge_name = '{0}_edges'.format(self.name)
-            self._edges = ImageFromMatrix(edge_img, edge_name)
-        return self._edges
+            raise RuntimeError("Edges were not generated for image {0}. Call edge_detection() first.".format(self.name))
+        else:
+            return self._edges
 
     def resize_to_match(self, image: T, height=False, width=False):
         new_height = image.height() if height else self.height()
         new_width = image.width if width else self.width()
         self.img = cv.resize(self.img, (new_width, new_height))
 
-    def height(self):
+    def height(self) -> int:
         return self.img.shape[0]
 
-    def width(self):
+    def width(self) -> int:
         return self.img.shape[1]
 
-    def overlay(self, image: T, alpha: float, beta: float, x: int, y: int):
+    def overlay(self, image: T, alpha: float, beta: float, x: int, y: int) -> T:
         if x + image.width() > self.width() or x < 0 or y + image.height() > self.height() or y < 0:
             print("{0} is overlaid on {1} out of frame. "
                                  "Dimensions of {1} are ({2}, {3}), {0} was placed at ({4}, {5})".format(image.name,
@@ -50,16 +54,18 @@ class Image:
 
         return ImageFromMatrix(img, "overlay_{0}_on_{1}_at_{2}_{3}".format(image.name, self.name, x, y))
 
-    def set_num_channels(self, n):
-        if n <= 0:
-            raise ValueError("The image can only have 1 channel (grayscale) or 3 channels (RGB)")
+    def to_grayscale(self):
+        if not self.is_grayscale:
+            self.img = cv.cvtColor(self.img, cv.COLOR_BGR2GRAY)
 
-        if n == 1:
-            self.img = cv.cvtColor(self.img, cv.COLOR_BGR2GRAY)  # make the vbar 1-channel
-        elif n == 3:
-            self.img = cv.cvtColor(self.img, cv.COLOR_GRAY2BGR)  # make the vbar 1-channel
-        else:
-            raise ValueError("Unsupported number of channels: {0}".format(n))
+    def to_bgr(self):
+        if self.is_grayscale:
+            self.img = cv.cvtColor(self.img, cv.COLOR_GRAY2BGR)
+
+    @property
+    def is_grayscale(self):
+        return len(self.img.shape) == 2
+
 
 class ImageFromPath(Image):
     def __init__(self, path: str):

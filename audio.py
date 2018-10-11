@@ -4,10 +4,10 @@ from image import Image
 
 
 class Audio:
-    def __init__(self, image: Image, sr=44100):
+    def __init__(self, image: Image, sr: int):
         self.image = image
         self.sr = sr
-        self.y = librosa.istft(image.edges.img)
+        self.y = librosa.istft(image.edge_detection().img)
         self.path = "{0}.wav".format(image.name)
         self.write()
 
