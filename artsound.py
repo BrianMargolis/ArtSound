@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import logging
 
 from audio import Audio
@@ -40,7 +41,7 @@ def parse_args():
                         help="Whether to show the edges of the image, the unprocessed image, or both side-by-side. Defaults to both.")
     parser.add_argument("-t", "--threshold", default=(150, 250), type=int, nargs=2,
                         help="Threshold values for edge detection. Defaults to (150, 250).")
-    parser.add_argument("-e", "--edges-only", default=False, action='store_const', const=True,
+    parser.add_argument("-e", "--edges_only", default=False, action='store_const', const=True,
                         help="Don't produce audio or video, just run edge detection. Useful for determining threshold parameters. Defaults to false.")
     args = vars(parser.parse_args())
     return args
