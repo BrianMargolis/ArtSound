@@ -1,4 +1,6 @@
+import logging
 from typing import List
+import cv2 as cv
 
 from moviepy.audio.io.AudioFileClip import AudioFileClip
 from moviepy.video.VideoClip import ImageClip
@@ -15,6 +17,7 @@ class Sonification():
         self.display = display
         self.frame_rate = frame_rate
         self.clip = None
+        self.vertical_bar_path = "vertical_bar.png"
 
     def render(self):
         if self.display == "edges":
@@ -28,6 +31,9 @@ class Sonification():
             self.clip = clips_array([[edge_clip, original_clip]])
 
     def _render_clip(self, frames):
+        logger = logging.getLogger('logger')
+        logger.info("Rendering video...")
+
         clips = []
         clip_duration = 1 / self.frame_rate
         for frame in frames:
@@ -40,19 +46,25 @@ class Sonification():
         return final_clip
 
     def _frames(self, image) -> List[Image]:
+        logger = logging.getLogger('logger')
+
         frames = []
         n_frames = int(self.audio.duration * self.frame_rate)
-        vertical_bar = ImageFromPath("vertical_bar.png")
+        vertical_bar = ImageFromPath(self.vertical_bar_path)
         vertical_bar.resize_to_match(image, height=True)  # stretch the vbar to the height of the image
         if image.is_grayscale:
             image.to_bgr()
-        print("# of frames: {0}".format(n_frames))
+
+        logger.info("Generating {0} frames...".format(n_frames))
         for i in range(n_frames):
             percent = i / n_frames
             x = int(percent * image.width())
             frame = image.overlay(vertical_bar, 1, 1, x, 0)
+            cv.imwrite("frames/{0}.png".format(i), frame.img)
             frames.append(frame)
         return frames
 
     def write(self):
-        self.clip.write_videofile("{0}.mp4".format(self.image.name))
+        logger = logging.getLogger('logger')
+        logger.info("Writing video to disk...")
+        self.clip.write_videofile("{0}.mp4".format(self.image.name), verbose=False)
