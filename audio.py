@@ -7,7 +7,8 @@ class Audio:
     def __init__(self, image: Image, sr: int):
         self.image = image
         self.sr = sr
-        self.y = librosa.istft(image.edge_detection().img)
+        self.y = librosa.istft(image.edges.img)
+        self.y = self.y / max(self.y)
         self.path = "{0}.wav".format(image.name)
         self.write()
 
