@@ -1,15 +1,9 @@
-from typing import List
-
-from moviepy.audio.io.AudioFileClip import AudioFileClip
-from moviepy.editor import concatenate_videoclips
-from moviepy.video import VideoClip
-from moviepy.video.VideoClip import ImageClip
-from moviepy.video.compositing.CompositeVideoClip import clips_array
-
 from audio import Audio
-from image import ImageFromPath, Image
+from image import ImageFromPath
 
 import argparse
+
+from sonification import Sonification
 
 
 def main():
@@ -22,61 +16,27 @@ def main():
                         help="Frame rate of the video output in frames per second. Defaults to 30.")
     parser.add_argument("-d", "--display", default="both", type=str, choices=["edges", "original", "both"],
                         help="Whether to show the edges of the image, the unprocessed image, or both side-by-side. Defaults to both.")
-    parser.add_argument("-t", "--threshold", default=(150, 250), type=int, nargs=2, help="Threshold values for edge detection. Defaults to (150, 250).")
+    parser.add_argument("-t", "--threshold", default=(150, 250), type=int, nargs=2,
+                        help="Threshold values for edge detection. Defaults to (150, 250).")
+    parser.add_argument("-e", "--edges-only", default=False, action='store_const', const=True,
+                        help="Don't produce audio or video, just run edge detection. Useful for determining threshold parameters. Defaults to false.")
 
     args = vars(parser.parse_args())
     path = args['image_path']
     frame_rate = args['frame_rate']
     display = args['display']
     sr = args['sample_rate']
+    edges_only = args['edges_only']
+    threshold = args['threshold']
 
     image = ImageFromPath(path)
-    image.edge_detection()
-    audio = Audio(image, sr)
+    image.edge_detection(threshold)
+    if not edges_only:
+        audio = Audio(image, sr)
 
-    if display == "edges":
-        frames = animate_frames(image.edges, audio.duration, frame_rate)
-        final_clip = render_clip(frames, audio, frame_rate)
-    elif display == "original":
-        frames = animate_frames(image, audio.duration, frame_rate)
-        final_clip = render_clip(frames, audio, frame_rate)
-    elif display == "both":
-        edge_frames = animate_frames(image.edges, audio.duration, frame_rate)
-        edge_clip = render_clip(edge_frames, audio, frame_rate)
-
-        original_frames = animate_frames(image, audio.duration, frame_rate)
-        original_clip = render_clip(original_frames, audio, frame_rate)
-
-        final_clip = clips_array([[edge_clip, original_clip]])
-
-    final_clip.write_videofile("{0}.mp4".format(image.name))
-
-
-def animate_frames(base_image: Image, duration: float, frame_rate: int) -> List[Image]:
-    frames = []
-    n_frames = int(duration * frame_rate)
-    vertical_bar = ImageFromPath("vertical_bar.png")
-    vertical_bar.resize_to_match(base_image, height=True)  # stretch the vbar to the height of the image
-    base_image.to_bgr()
-    for i in range(n_frames):
-        percent = i / n_frames
-        x = int(percent * base_image.width())
-        frame = base_image.overlay(vertical_bar, 1, 1, x, 0)
-        frames.append(frame)
-    return frames
-
-
-def render_clip(frames, audio, framerate) -> VideoClip:
-    clips = []
-    clip_duration = 1 / framerate
-    for frame in frames:
-        clip = ImageClip(frame.img)
-        clip = clip.set_duration(clip_duration)
-        clips.append(clip)
-    final_clip = concatenate_videoclips(clips, method="chain")
-    final_clip = final_clip.set_audio(AudioFileClip(audio.path))
-    final_clip = final_clip.set_fps(framerate)
-    return final_clip
+        sonification = Sonification(image, audio, display, frame_rate)
+        sonification.render()
+        sonification.write()
 
 
 if __name__ == "__main__":

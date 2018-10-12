@@ -14,6 +14,7 @@ class Image:
     def edge_detection(self, threshold: Tuple = (150, 250)):
         edge_img = cv.Canny(self.img, threshold[0], threshold[1])
         edge_name = '{0}_edges'.format(self.name)
+        cv.imwrite(edge_name + ".png", edge_img)
         self._edges = ImageFromMatrix(edge_img, edge_name)
 
     @property
@@ -37,11 +38,11 @@ class Image:
     def overlay(self, image: T, alpha: float, beta: float, x: int, y: int) -> T:
         if x + image.width() > self.width() or x < 0 or y + image.height() > self.height() or y < 0:
             print("{0} is overlaid on {1} out of frame. "
-                                 "Dimensions of {1} are ({2}, {3}), {0} was placed at ({4}, {5})".format(image.name,
-                                                                                                         self.name,
-                                                                                                         self.width(),
-                                                                                                         self.height(),
-                                                                                                         x, y))
+                  "Dimensions of {1} are ({2}, {3}), {0} was placed at ({4}, {5})".format(image.name,
+                                                                                          self.name,
+                                                                                          self.width(),
+                                                                                          self.height(),
+                                                                                          x, y))
 
         img = np.copy(self.img)
         x_start = max(0, x)
