@@ -4,7 +4,7 @@ chardet==3.0.4
 decorator==4.3.0
 idna==2.7
 imageio==2.4.1
-joblib==0.12.5
+joblib==1.2.0
 librosa==0.6.2
 llvmlite==0.25.0
 moviepy==0.2.3.5
